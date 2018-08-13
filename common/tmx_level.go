@@ -43,10 +43,14 @@ type TMXTileset struct {
 	TileCount int `xml:"tilecount,attr"`
 	// ImageSrc contains the TMXTilesetSrc which defines the tileset image
 	ImageSrc TMXTilesetSrc `xml:"image"`
-	// Image holds the reference of the tileset's TextureResource
-	Image *TextureResource
 	// Tiles are any tiles inside the tileset
 	Tiles []TMXTile `xml:"tile"`
+	// Spacing is the space between tiles in the tileset
+	Spacing int `xml:"spacing,attr"`
+	// Margin is the margin around tiles in the tileset
+	Margin int `xml:"margin,attr"`
+	// SpriteSheet is the sprite sheet associated with the tile set
+	SpriteSheet *Spritesheet
 }
 
 // TMXTileLayer represents a tile layer parsed from the TileMap XML
@@ -246,10 +250,10 @@ type TMXObject struct {
 	X float64 `xml:"x,attr"`
 	// Y holds the Y float64 coordinate of the object in the map
 	Y float64 `xml:"y,attr"`
-	// Width is the integer width of the object
-	Width int `xml:"width,attr"`
-	// Height is the integer height of the object
-	Height int `xml:"height,attr"`
+	// Width is the width of the object in pixels
+	Width float64 `xml:"width,attr"`
+	// Height is the height of the object in pixels
+	Height float64 `xml:"height,attr"`
 	// Gid is the integer global tile ID
 	Gid int `xml:"gid,attr"`
 	// Polyline contains the TMXPolyline object if the parsed object has a polyline points string
@@ -357,11 +361,16 @@ func createLevelFromTmx(tmxBytes []byte, tmxURL string) (*Level, error) {
 			tmxLevel.Tilesets[i] = ts
 			continue
 		}
+
 		texResource, err := getTextureResourcesFromTmx(path.Join(path.Dir(tmxURL), ts.ImageSrc.Source))
 		if err != nil {
 			return nil, err
 		}
-		ts.Image = texResource
+		ss := NewSpritesheetWithBorderFromTexture(texResource, ts.TileWidth, ts.TileHeight, ts.Spacing, ts.Spacing)
+		if err != nil {
+			return nil, err
+		}
+		ts.SpriteSheet = ss
 		tmxLevel.Tilesets[i] = ts
 	}
 
@@ -377,14 +386,7 @@ func createLevelFromTmx(tmxBytes []byte, tmxURL string) (*Level, error) {
 	sort.Sort(ByFirstgid(tmxLevel.Tilesets))
 	ts := make([]*tilesheet, len(tmxLevel.Tilesets))
 	for i, tts := range tmxLevel.Tilesets {
-		tiles := make([]Tile, 0)
-		for _, t := range tts.Tiles {
-			tile := Tile{}
-			tile.Image = &Texture{t.Image.Texture, t.Image.Width, t.Image.Height, engo.AABB{Max: engo.Point{X: 1.0, Y: 1.0}}}
-			tile.Point = engo.Point{X: 0, Y: 0}
-			tiles = append(tiles, tile)
-		}
-		ts[i] = &tilesheet{tts.Image, tts.Firstgid, tts.TileWidth, tts.TileHeight, tiles}
+		ts[i] = &tilesheet{tts.SpriteSheet, tts.Firstgid, make([]Tile, 0)}
 	}
 
 	level.Tileset = createTileset(level, ts)

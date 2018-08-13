@@ -89,10 +89,10 @@ type Object struct {
 	X float64
 	// X holds the X float64 coordinate of the object in the map
 	Y float64
-	// Width is the integer width of the object
-	Width int
-	// Height is the integer height of the object
-	Height int
+	// Width is the width of the object in pixels
+	Width float64
+	// Height is the height of the object in pixels
+	Height float64
 }
 
 // PolylineObject is a TMX polyline object with all its default Tiled attributes
@@ -222,11 +222,9 @@ type Tile struct {
 }
 
 type tilesheet struct {
-	Image    *TextureResource
-	Firstgid int
-	Width    int
-	Height   int
-	Tiles    []Tile
+	SpriteSheet *Spritesheet
+	Firstgid    int
+	Tiles       []Tile
 }
 
 type layer struct {
@@ -238,49 +236,13 @@ type layer struct {
 
 func createTileset(lvl *Level, sheets []*tilesheet) map[int]*Tile {
 	tileset := make(map[int]*Tile)
-	deftw := float32(lvl.TileWidth)
-	defth := float32(lvl.TileHeight)
 
 	for _, sheet := range sheets {
-		var tw, th = deftw, defth
-		curGid := sheet.Firstgid
-		if sheet.Height != 0 && sheet.Width != 0 {
-			tw, th = float32(sheet.Width), float32(sheet.Height)
-		}
-		for i := range sheet.Tiles {
-			tileset[curGid] = &sheet.Tiles[i]
-			curGid++
-		}
-		if sheet.Image == nil {
-			continue
-		}
-		setWidth := sheet.Image.Width / tw
-		setHeight := sheet.Image.Height / th
-		totalTiles := int(setWidth * setHeight)
-
-		for i := 0; i < totalTiles; i++ {
-			t := &Tile{}
-			x := float32(i%int(setWidth)) * tw
-			y := float32(i/int(setWidth)) * th
-
-			invTexWidth := 1.0 / sheet.Image.Width
-			invTexHeight := 1.0 / sheet.Image.Height
-
-			u := x * invTexWidth
-			v := y * invTexHeight
-			u2 := (x + tw) * invTexWidth
-			v2 := (y + th) * invTexHeight
-			t.Image = &Texture{
-				id:     sheet.Image.Texture,
-				width:  tw,
-				height: th,
-				viewport: engo.AABB{
-					Min: engo.Point{X: u, Y: v},
-					Max: engo.Point{X: u2, Y: v2},
-				},
-			}
-			tileset[curGid] = t
-			curGid++
+		for i := 0; i < sheet.SpriteSheet.CellCount(); i++ {
+			tile := &Tile{}
+			tex := sheet.SpriteSheet.Cell(i)
+			tile.Image = &tex
+			tileset[sheet.Firstgid+i] = tile
 		}
 	}
 
