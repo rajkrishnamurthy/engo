@@ -415,7 +415,6 @@ func createLevelFromTmx(tmxBytes []byte, tmxURL string) (*Level, error) {
 
 		// check all objects in layer
 		for _, tmxObject := range objectLayer.Objects {
-
 			// check if object is a Polyline object
 			if tmxObject.Polyline.Points != "" {
 
@@ -449,6 +448,7 @@ func createLevelFromTmx(tmxBytes []byte, tmxURL string) (*Level, error) {
 					tmxObject.Y,
 					tmxObject.Width,
 					tmxObject.Height,
+					tmxObject.Gid,
 				}
 
 				levelObjectLayer.Objects = append(levelObjectLayer.Objects, object)

@@ -93,6 +93,8 @@ type Object struct {
 	Width float64
 	// Height is the height of the object in pixels
 	Height float64
+	// Gid is a reference to an image, if any, associated with the object
+	Gid int
 }
 
 // PolylineObject is a TMX polyline object with all its default Tiled attributes
@@ -238,7 +240,8 @@ func createTileset(lvl *Level, sheets []*tilesheet) map[int]*Tile {
 	tileset := make(map[int]*Tile)
 
 	for _, sheet := range sheets {
-		for i := 0; i < sheet.SpriteSheet.CellCount(); i++ {
+		var i int
+		for i = 0; i < sheet.SpriteSheet.CellCount(); i++ {
 			tile := &Tile{}
 			tex := sheet.SpriteSheet.Cell(i)
 			tile.Image = &tex
